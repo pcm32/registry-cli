@@ -72,7 +72,6 @@ for more detail on garbage collection read here:
 
 def main_loop(args):
 
-    keep_last_versions = int(args.num)
 
     registry = Registry(args.origin, args.login)
 
