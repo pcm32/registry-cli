@@ -1,5 +1,6 @@
 from registry import Registry
 import argparse
+import os.path
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -56,7 +57,8 @@ for more detail on garbage collection read here:
     parser.add_argument(
         '-s', '--skip',
         help='Specify images and tags to skip in the migration',
-        required=False
+        required=False,
+        default=None
     )
 
 
@@ -80,6 +82,11 @@ def main_loop(args):
     else:
         image_list = registry.list_images()
 
+    images_to_skip = []
+    if args.skip != None and os.path.isfile(args.skip):
+        sf = open(args.skip, mode='r')
+        images_to_skip = sf.read().splitlines()
+
 
     # loop through registry's images
     # or through the ones given in command line
@@ -93,8 +100,16 @@ def main_loop(args):
             print "#  no tags!"
             continue
 
+        if image_name in images_to_skip:
+            print "# skipping all tags for image..."
+            continue
+
         # print commands for transfer
         for tag in tags_list:
+            if "{}:{}".format(image_name,tag) in images_to_skip:
+                print "# skipping tag {} for image {}".format(tag, image_name)
+                break
+
             print "docker pull {}/{}:{}".format(args.origin, image_name, tag)
             print "docker tag {}/{}:{} {}/{}:{}".format(args.origin, image_name, tag, args.destination, image_name, tag)
             print "docker push {}/{}:{}".format(args.destination, image_name, tag)
