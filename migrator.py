@@ -80,16 +80,17 @@ def main_loop(args):
     else:
         image_list = registry.list_images()
 
+
     # loop through registry's images
     # or through the ones given in command line
     for image_name in image_list:
-        print "Image: {}".format(image_name)
+        print "# Image: {}".format(image_name)
 
 
         tags_list = registry.list_tags(image_name)
 
         if tags_list == None or tags_list == []:
-            print "  no tags!"
+            print "#  no tags!"
             continue
 
         # print commands for transfer
