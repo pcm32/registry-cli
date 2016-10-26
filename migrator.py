@@ -56,7 +56,7 @@ for more detail on garbage collection read here:
     parser.add_argument(
         '-s', '--skip',
         help='Specify images and tags to skip in the migration',
-        required=True
+        required=False
     )
 
 
