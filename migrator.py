@@ -98,7 +98,7 @@ def main_loop(args):
             print "docker pull {}/{}:{}".format(args.origin, image_name, tag)
             print "docker tag {}/{}:{} {}/{}:{}".format(args.origin, image_name, tag, args.destination, image_name, tag)
             print "docker push {}/{}:{}".format(args.destination, image_name, tag)
-            print "echo '{}/{}:{}' >> migration.done".format(args.origin, image_name, tag)
+            print "echo '{}:{}' >> migration.done".format( image_name, tag)
             print "\n\n"
 
 
