@@ -87,6 +87,8 @@ def main_loop(args):
         sf = open(args.skip, mode='r')
         images_to_skip = sf.read().splitlines()
 
+    origin_host_no_http = args.origin.replace('http://', '').replace('https://', '')
+    dest_host_no_http = args.destination.replace('http://', '').replace('https://', '')
 
     # loop through registry's images
     # or through the ones given in command line
@@ -110,9 +112,10 @@ def main_loop(args):
                 print "# skipping tag {} for image {}".format(tag, image_name)
                 break
 
-            print "docker pull {}/{}:{}".format(args.origin, image_name, tag)
-            print "docker tag {}/{}:{} {}/{}:{}".format(args.origin, image_name, tag, args.destination, image_name, tag)
-            print "docker push {}/{}:{}".format(args.destination, image_name, tag)
+            print "docker pull {}/{}:{}".format(origin_host_no_http, image_name, tag)
+            print "docker tag {}/{}:{} {}/{}:{}".format(origin_host_no_http, image_name, tag,
+                                                        dest_host_no_http, image_name, tag)
+            print "docker push {}/{}:{}".format(dest_host_no_http, image_name, tag)
             print "echo '{}:{}' >> migration.done".format( image_name, tag)
             print "\n\n"
 
