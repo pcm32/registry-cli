@@ -1,4 +1,6 @@
 from registry import Registry
+from Image import DockerImage, DistanceMatrix, AccumulatedUsage
+
 import argparse
 import os.path
 
@@ -61,6 +63,13 @@ for more detail on garbage collection read here:
         default=None
     )
 
+    parser.add_argument(
+        '-m', '--max_space_use',
+        help='Specify maximum amount of disk space to be used, default (0) is unlimited',
+        required=False,
+        default=0
+    )
+
 
     parser.add_argument(
         '--layers',
@@ -90,34 +99,61 @@ def main_loop(args):
     origin_host_no_http = args.origin.replace('http://', '').replace('https://', '')
     dest_host_no_http = args.destination.replace('http://', '').replace('https://', '')
 
-    # loop through registry's images
-    # or through the ones given in command line
+    dist_matrix = DistanceMatrix()
+
     for image_name in image_list:
-        print "# Image: {}".format(image_name)
-
-
         tags_list = registry.list_tags(image_name)
 
         if tags_list == None or tags_list == []:
-            print "#  no tags!"
             continue
 
         if image_name in images_to_skip:
-            print "# skipping all tags for image..."
+            print "# skipping all tags for image {}".format(image_name)
             continue
 
-        # print commands for transfer
         for tag in tags_list:
-            if "{}:{}".format(image_name,tag) in images_to_skip:
+            if "{}:{}".format(image_name, tag) in images_to_skip:
                 print "# skipping tag {} for image {}".format(tag, image_name)
                 break
 
-            print "docker pull {}/{}:{}".format(origin_host_no_http, image_name, tag)
-            print "docker tag {}/{}:{} {}/{}:{}".format(origin_host_no_http, image_name, tag,
-                                                        dest_host_no_http, image_name, tag)
-            print "docker push {}/{}:{}".format(dest_host_no_http, image_name, tag)
-            print "echo '{}:{}' >> migration.done".format( image_name, tag)
-            print "\n\n"
+            image_obj = DockerImage(image_name, tag)
+            dist_matrix.add_image(image_obj)
+
+    image_obj_list = dist_matrix.get_image_list()
+    image_obj_list.sort(key=lambda x: len(x.get_layers().keys()), reverse=True)
+
+    accumulator = AccumulatedUsage()
+
+    next_image = image_obj_list[1]
+    visited_images = []
+
+    while next_image is not None:
+        image_name = next_image.full_name()
+        print "# Image: {}".format(image_name)
+        print "docker pull {}/{}".format(origin_host_no_http, image_name)
+        print "docker tag {}/{} {}/{}".format(origin_host_no_http, image_name,
+                                                    dest_host_no_http, image_name)
+        print "docker push {}/{}:{}".format(dest_host_no_http, image_name)
+        print "echo '{}:{}' >> migration.done".format(image_name)
+        print "\n\n"
+
+        visited_images.append(image_name)
+        accumulator.add(next_image)
+
+        current_usage = accumulator.get_current_usage()
+        if 0 < args.max_space_use < accumulator.get_current_usage():
+            print "# Used so far {} GBs, above limit of {}".format(current_usage/(1024**3), args.max_space_use)
+            print "# Going to delete existing docker images"
+            print "docker rm $(docker ps -a -q)"
+            print "docker rmi $(docker images -q)"
+            print "docker rmi -f $(docker images | grep 'docker-registry' | awk '{ print $3 }' | sort -u)"
+            print "#\n#"
+            accumulator = AccumulatedUsage()
+
+
+        next_image = dist_matrix.get_closest_to(next_image, skip_list=visited_images)
+
+
 
 
 

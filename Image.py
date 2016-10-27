@@ -47,10 +47,13 @@ class DistanceMatrix(object):
 
         self.__images[docker_image.full_name()] = docker_image
 
+    def get_image_list(self):
+        return self.__images.values()
+
     def get_closest_to(self, docker_image, skip_list=[]):
 
         current_max = 0
-        closest = docker_image
+        closest = None
         for image_name, pairs in self.__shared_data.items():
             if docker_image.full_name() != image_name and docker_image.full_name() in pairs.keys():
                 if image_name in skip_list:
@@ -67,8 +70,6 @@ class DistanceMatrix(object):
                         closest = self.__images[second_image_name]
 
         return closest
-
-
 
 
 
