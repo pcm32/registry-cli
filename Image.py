@@ -58,14 +58,14 @@ class DistanceMatrix(object):
             if docker_image.full_name() != image_name and docker_image.full_name() in pairs.keys():
                 if image_name in skip_list:
                     continue
-                elif pairs[docker_image.full_name()] > current_max:
+                elif pairs[docker_image.full_name()] >= current_max:
                     current_max = pairs[docker_image.full_name()]
                     closest = self.__images[image_name]
             elif docker_image.full_name() == image_name:
                 for second_image_name in pairs.keys():
                     if second_image_name in skip_list:
                         continue
-                    elif pairs[second_image_name] > current_max:
+                    elif pairs[second_image_name] >= current_max:
                         current_max = pairs[second_image_name]
                         closest = self.__images[second_image_name]
 
