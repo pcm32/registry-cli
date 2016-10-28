@@ -133,8 +133,8 @@ def main_loop(args):
         print "docker pull {}/{}".format(origin_host_no_http, image_name)
         print "docker tag {}/{} {}/{}".format(origin_host_no_http, image_name,
                                                     dest_host_no_http, image_name)
-        print "docker push {}/{}:{}".format(dest_host_no_http, image_name)
-        print "echo '{}:{}' >> migration.done".format(image_name)
+        print "docker push {}/{}".format(dest_host_no_http, image_name)
+        print "echo '{}' >> migration.done".format(image_name)
         print "\n\n"
 
         visited_images.append(image_name)
