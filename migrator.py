@@ -66,6 +66,7 @@ for more detail on garbage collection read here:
     parser.add_argument(
         '-m', '--max_space_use',
         help='Specify maximum amount of disk space to be used, default (0) is unlimited',
+        type=float,
         required=False,
         default=0
     )
@@ -117,6 +118,8 @@ def main_loop(args):
                 break
 
             image_obj = DockerImage(image_name, tag)
+            for layer in registry.list_tag_layers(image_name,tag):
+                image_obj.add_layer(digest=layer['digest'], size=layer['size'])
             dist_matrix.add_image(image_obj)
 
     image_obj_list = dist_matrix.get_image_list()
@@ -126,10 +129,12 @@ def main_loop(args):
 
     next_image = image_obj_list[1]
     visited_images = []
+    done = 0
 
     while next_image is not None:
         image_name = next_image.full_name()
         print "# Image: {}".format(image_name)
+        print "# Size: {}".format(next_image.get_size())
         print "docker pull {}/{}".format(origin_host_no_http, image_name)
         print "docker tag {}/{} {}/{}".format(origin_host_no_http, image_name,
                                                     dest_host_no_http, image_name)
@@ -141,9 +146,12 @@ def main_loop(args):
         accumulator.add(next_image)
 
         current_usage = accumulator.get_current_usage()
+        done += 1
+        print "# current usage: {} MBs".format(current_usage)
         if 0 < args.max_space_use < accumulator.get_current_usage():
-            print "# Used so far {} GBs, above limit of {}".format(current_usage/(1024**3), args.max_space_use)
+            print "# Used so far {} GBs, above limit of {}".format(current_usage/(1024**3), args.max_space_use/(1024**3))
             print "# Going to delete existing docker images"
+            print "# Done so far {} out of {}".format(done, len(image_obj_list))
             print "docker rm $(docker ps -a -q)"
             print "docker rmi $(docker images -q)"
             print "docker rmi -f $(docker images | grep 'docker-registry' | awk '{ print $3 }' | sort -u)"
